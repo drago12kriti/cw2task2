@@ -1,0 +1,28 @@
+#!/bin/bash
+openssl genpkey -algorithm RSA -out private_key_a.pem
+openssl rsa -pubout -in private_key_A.pem
+echo " this is data" > data.txt
+
+openssl genpkey -algorithm RSA -out private_key_B.pemm
+openssl rsa -pubout -in private_key_B.pemm -out public_keyB.pem
+echo "this is data" > dataB.txt
+
+symmetrickeys=kali
+echo "$dataA.txt" | openssl enc -aes-256-cbc -k "$symmetrickeys" -out encA.enc
+echo "$dataB.txt" | openssl enc -aes-256-cbc -k "$symmetrickeys" -out encB.enc
+cp public_key_A.pem SystemA
+cp public_key_B.pem SystemB
+
+openssl dgst -sha256 -sign private_key_A.pem -out signA.sha encA.enc
+openssl dgst -sha256 -sign private_key_B.pem -out signB.sha encB.enc
+
+#sysA to sysB
+oepnssl enc -aes-256-cbc -d -k "symmetrickeys" -in encB.enc -out decryptB.txt
+openssl dgst -sha256 -verify private_key_B.pem -signature signB.sha encB.enc
+
+#sysB to SysA
+openssl enc -aes-256-cbc -d -k "symmetrickeys" -in encA.enc -out decryptA.txt
+openssl dgst -sha256 -verify private_key_A.pem -signature signA.sha encA.enc
+
+echo " decrypt from A : $(cat decryptA.txt)"
+echo " decrypt from B: $(cat decryptB.txt)"
